@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comfyui-seed-tracker"
+version = "0.1.0"
+description = "A ComfyUI extension that tracks random seeds throughout your image generation workflows"
+readme = "README.md"
+authors = [
+    {name = "Stefan", email = "stefan@novabtyeai.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.urls]
+"Homepage" = "https://github.com/angelcookies/comfyui-seed-tracker"
+"Bug Tracker" = "https://github.com/angelcookies/comfyui-seed-tracker/issues"
+
+[tool.setuptools]
+packages = ["seed_tracker"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
