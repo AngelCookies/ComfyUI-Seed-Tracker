@@ -28,7 +28,7 @@ A custom node extension for ComfyUI that tracks and logs random seeds used throu
 
 2. Clone this repository:
    ```
-   git clone https://github.com/yourusername/comfyui-seed-tracker.git
+   git clone https://github.com/angelcookies/comfyui-seed-tracker.git
    ```
    
    Alternatively, download and extract the ZIP file to your custom_nodes directory.
