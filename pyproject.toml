@@ -10,6 +10,7 @@ readme = "README.md"
 authors = [
     {name = "Stefan", email = "stefan@novabtyeai.com"}
 ]
+version = "1.0.0"
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",

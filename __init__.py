@@ -1,10 +1,23 @@
-# This is the file structure:
-# seed_tracker/
-# ├── __init__.py
-# ├── node.py
-# └── utils.py
-
 # File: seed_tracker/__init__.py
-from .node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 
-__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+from .node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .utils import get_comfyui_version
+
+# Version information
+__version__ = "1.0.0"
+
+# ComfyUI manager metadata
+NODE_CLASS_MAPPINGS = NODE_CLASS_MAPPINGS
+NODE_DISPLAY_NAME_MAPPINGS = NODE_DISPLAY_NAME_MAPPINGS
+
+# Add version information for ComfyUI extension manager
+VERSION = __version__
+
+# ComfyUI version compatibility
+COMFYUI_REQUIRED_VERSION = "Tested with ComfyUI [ComfyUI_00_stable]"
+COMFYUI_CURRENT_VERSION = get_comfyui_version()
+
+print(f"ComfyUI Seed Tracker v{__version__} initialized")
+print(f"Running on ComfyUI version: {COMFYUI_CURRENT_VERSION}")
+
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'VERSION']

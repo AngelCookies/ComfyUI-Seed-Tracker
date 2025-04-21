@@ -5,13 +5,21 @@ A custom node extension for ComfyUI that tracks and logs random seeds used throu
 ## Features
 
 - Track individual seeds from specific nodes
-- Track batches of seeds from batch processing
-- Global seed tracking mode to monitor all seeds in a workflow
+- Global seed tracking mode to monitor seeds in a workflow
 - Export seed logs in different formats (JSON, CSV, TXT)
 - Organize seeds by session ID for easy reference
 - Add custom notes to tracked seeds
 
 ## Installation
+
+### Using ComfyUI Manager
+
+1. Open ComfyUI
+2. Open ComfyUI Manager
+3. Search for "Seed Tracker"
+4. Click Install
+
+### Manual Installation
 
 1. Navigate to your ComfyUI custom_nodes directory:
    ```
@@ -20,9 +28,9 @@ A custom node extension for ComfyUI that tracks and logs random seeds used throu
 
 2. Clone this repository:
    ```
-   git clone https://github.com/angelcookies/comfyui-seed-tracker.git
+   git clone https://github.com/yourusername/comfyui-seed-tracker.git
    ```
-
+   
    Alternatively, download and extract the ZIP file to your custom_nodes directory.
 
 3. Restart ComfyUI
@@ -44,22 +52,9 @@ Outputs:
 - `seed`: The same seed passed through (for convenience in workflows)
 - `log_path`: Path to the JSON log file
 
-### Seed Tracker Batch Node
-
-Designed for batch processing, this node can track multiple seeds at once.
-
-Inputs:
-- `seeds`: A batch of seed values to track
-- `node_id`: A unique identifier for the source
-- `notes`: Optional notes
-
-Outputs:
-- `seeds`: The same seeds passed through
-- `log_path`: Path to the JSON log file
-
 ### Global Seed Tracker Node
 
-A standalone node that creates a session log file.
+A standalone node that creates a session log file and attempts to track seeds automatically.
 
 Inputs:
 - `enabled`: Toggle tracking on/off
@@ -74,7 +69,7 @@ Outputs:
 Export tracked seeds in different formats.
 
 Inputs:
-- `session_id`: The session ID to export
+- `session_id`: The session ID to export (leave empty for all sessions)
 - `format`: Output format (json, csv, txt)
 
 Outputs:
@@ -87,7 +82,7 @@ All seed logs are stored in your ComfyUI output directory under a `seed_logs` fo
 ## Example Workflow
 
 1. Add a "Global Seed Tracker" node at the beginning of your workflow
-2. Connect "Seed Tracker" nodes to any KSampler or other nodes where you want to track seeds
+2. Connect "Seed Tracker" nodes to any KSampler or other nodes where you want to track specific seeds
 3. When you want to reference seeds later, use the "Seed Exporter" node to export them in your preferred format
 
 ## Advanced Integration
