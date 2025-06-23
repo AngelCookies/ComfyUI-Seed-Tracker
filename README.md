@@ -54,15 +54,24 @@ Outputs:
 
 ### Global Seed Tracker Node
 
-A standalone node that creates a session log file and attempts to track seeds automatically.
+A central node that collects and manages seeds from all connected Seed Tracker nodes.
 
 Inputs:
 - `enabled`: Toggle tracking on/off
-- `include_metadata`: Include workflow metadata in logs
+- `seed_data`: Connection from Seed Tracker nodes (internal data type)
 - `session_name`: Optional custom session name
+- `show_debug`: Show debug information including log file path
 
 Outputs:
-- `log_path`: Path to the session log file
+- None by default (works silently)
+- `log_path`: Only shown when `show_debug` is enabled
+
+## Example Workflow
+
+1. Add individual "Seed Tracker" nodes to any samplers or random number generators
+2. Connect the `seed_data` output from each Seed Tracker to the `seed_data` input of a Global Seed Tracker
+3. The Global Seed Tracker will collect and consolidate all seeds into a single session log
+4. When you want to export your tracked seeds, use the "Seed Exporter" node
 
 ### Seed Exporter Node
 

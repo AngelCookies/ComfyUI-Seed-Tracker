@@ -1,11 +1,8 @@
-# File: seed_tracker/node.py
-
 import os
 import datetime
 from typing import Dict, Any, Tuple, Union, List
 import folder_paths
 from .utils import save_json, generate_session_id, ensure_output_dir, load_json, export_to_csv
-
 
 class SeedTracker:
     """
@@ -30,13 +27,12 @@ class SeedTracker:
             }
         }
 
-    RETURN_TYPES = ("INT", "STRING")
-    RETURN_NAMES = ("seed", "log_path")
+    RETURN_TYPES = ("INT", "SEED_DATA", "STRING")
+    RETURN_NAMES = ("seed", "seed_data", "log_path")
     FUNCTION = "track_seed"
     CATEGORY = "utils/seed_tracking"
-    OUTPUT_NODE = True
 
-    def track_seed(self, seed: int, node_id: str, notes: str = "") -> Tuple[int, str]:
+    def track_seed(self, seed: int, node_id: str, notes: str = ""):
         """Track a seed value and associate it with a node ID"""
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -54,7 +50,10 @@ class SeedTracker:
         # Save to log file
         log_path = self.save_seed_log()
 
-        return (seed, log_path)
+        # Create seed data dict for connecting to GlobalSeedTracker
+        seed_data = {node_id: self.tracked_seeds[node_id]}
+
+        return (seed, seed_data, log_path)
 
     def save_seed_log(self) -> str:
         """Save the tracked seeds to a JSON file"""
@@ -69,108 +68,6 @@ class SeedTracker:
 
         save_json(data, log_path)
         return log_path
-
-
-class GlobalSeedTracker:
-    """
-    A node that hooks into the workflow and attempts to track all seeds
-    across the entire ComfyUI workflow.
-    """
-
-    def __init__(self):
-        self.all_seeds = {}
-        self.output_dir = ensure_output_dir()
-        self.session_id = generate_session_id()
-        self.active = False
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "enabled": ("BOOLEAN", {"default": True}),
-                "include_metadata": ("BOOLEAN", {"default": True}),
-            },
-            "optional": {
-                "session_name": ("STRING", {"default": ""}),
-            }
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("log_path",)
-    FUNCTION = "start_tracking"
-    CATEGORY = "utils/seed_tracking"
-    OUTPUT_NODE = True
-
-    def start_tracking(self, enabled: bool, include_metadata: bool, session_name: str = "") -> Tuple[str]:
-        """Start tracking all seeds in the workflow"""
-        if not enabled:
-            self.active = False
-            return ("Tracking disabled",)
-
-        self.active = True
-
-        # Create a session log file
-        session_id = session_name if session_name else self.session_id
-        log_path = os.path.join(self.output_dir, f"global_seed_log_{session_id}.json")
-
-        # Try to hook into ComfyUI's seed generation
-        try:
-            # This is a placeholder - in a real implementation we would
-            # need to find a way to hook into ComfyUI's execution system
-            # One approach would be to monkey patch the functions that generate seeds
-            from comfy.samplers import prepare_sampling
-            original_prepare_sampling = prepare_sampling
-
-            def patched_prepare_sampling(*args, **kwargs):
-                result = original_prepare_sampling(*args, **kwargs)
-                if self.active and 'noise' in kwargs:
-                    # Record the seed
-                    self._record_seed(kwargs.get('seed', 0), 'sampler', 'Auto-captured by GlobalSeedTracker')
-                return result
-
-            # This is commented out because it would need to be tested carefully
-            # prepare_sampling = patched_prepare_sampling
-
-        except Exception as e:
-            # If we can't hook into the system, just note that in the log
-            pass
-
-        data = {
-            "session_id": session_id,
-            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "status": "Active" if self.active else "Inactive",
-            "include_metadata": include_metadata,
-            "message": "Global seed tracking activated - using manual tracking mode"
-        }
-
-        save_json(data, log_path)
-        return (log_path,)
-
-    def _record_seed(self, seed, source, notes):
-        """Internal method to record a captured seed"""
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        if source not in self.all_seeds:
-            self.all_seeds[source] = []
-
-        self.all_seeds[source].append({
-            "seed": seed,
-            "timestamp": timestamp,
-            "notes": notes
-        })
-
-        # Update the log file
-        log_path = os.path.join(self.output_dir, f"global_seed_log_{self.session_id}.json")
-
-        data = {
-            "session_id": self.session_id,
-            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "status": "Active",
-            "seeds": self.all_seeds
-        }
-
-        save_json(data, log_path)
-
 
 class SeedExporter:
     """
@@ -264,6 +161,81 @@ class SeedExporter:
 
         return (export_path,)
 
+class GlobalSeedTracker:
+    """
+    A central node that collects and tracks seeds from connected Seed Tracker nodes
+    and provides global seed management.
+    """
+
+    def __init__(self):
+        self.output_dir = ensure_output_dir()
+        self.session_id = generate_session_id()
+        self.tracked_seeds = {}
+        self.active = True
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "enabled": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "seed_data": ("SEED_DATA", {"forceInput": True}),
+                "session_name": ("STRING", {"default": ""}),
+                "show_debug": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    RETURN_TYPES = ()
+    RETURN_NAMES = ()
+    FUNCTION = "track_seeds"
+    CATEGORY = "utils/seed_tracking"
+    OUTPUT_NODE = True
+
+    # Add optional debug output if requested
+    OPTIONAL_OUTPUTS = [("log_path", "STRING")]
+
+    def track_seeds(self, enabled: bool, seed_data=None, session_name: str = "", show_debug: bool = False):
+        """Collect and track seeds from connected Seed Tracker nodes"""
+        if not enabled:
+            self.active = False
+            return {"ui": {"text": "Seed tracking disabled"}} if show_debug else {}
+
+        self.active = True
+
+        # Use custom session name if provided, otherwise use generated ID
+        session_id = session_name if session_name else self.session_id
+        log_path = os.path.join(self.output_dir, f"global_seed_log_{session_id}.json")
+
+        # Process incoming seed data if available
+        if seed_data is not None:
+            if isinstance(seed_data, dict):
+                # Merge incoming seed data with our tracked seeds
+                for node_id, seeds in seed_data.items():
+                    if node_id not in self.tracked_seeds:
+                        self.tracked_seeds[node_id] = []
+                    if isinstance(seeds, list):
+                        self.tracked_seeds[node_id].extend(seeds)
+                    else:
+                        self.tracked_seeds[node_id].append(seeds)
+
+        # Prepare data for saving
+        data = {
+            "session_id": session_id,
+            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "status": "Active" if self.active else "Inactive",
+            "seeds": self.tracked_seeds,
+            "total_seeds_tracked": sum(len(seeds) for seeds in self.tracked_seeds.values())
+        }
+
+        # Save the seed log
+        save_json(data, log_path)
+
+        # Return appropriate outputs based on show_debug flag
+        if show_debug:
+            return (log_path,)
+        else:
+            return {}
 
 # Node mapping for ComfyUI
 NODE_CLASS_MAPPINGS = {

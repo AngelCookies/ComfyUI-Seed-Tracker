@@ -1,5 +1,3 @@
-# File: seed_tracker/utils.py
-
 import os
 import json
 import datetime
